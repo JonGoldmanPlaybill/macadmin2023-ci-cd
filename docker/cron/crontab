@@ -1,0 +1,3 @@
+* * * * * date > /proc/1/fd/1 2>/proc/1/fd/2
+* * * * * CRAFT_ALLOW_SUPERUSER=true /usr/local/bin/php /var/www/html/craft schedule-drafts/publish-drafts > /proc/1/fd/1 2>/proc/1/fd/2
+* * * * * CRAFT_ALLOW_SUPERUSER=true /usr/local/bin/php /var/www/html/craft stubhub/import --interactive=0 > /proc/1/fd/1 2>/proc/1/fd/2

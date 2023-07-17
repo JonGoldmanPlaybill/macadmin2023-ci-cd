@@ -1,0 +1,49 @@
+version: 0.2
+env:
+  variables: # Make sure that the static variables are for this specific environment
+    BUILD_SECRETS: "arn:aws:secretsmanager:us-east-1:348896246029:secret:marquee/build-016Yde" #should be the same for all envs
+    DB_SECRETS: "arn:aws:secretsmanager:us-east-1:348896246029:secret:marquee/db/prod-sskjSv" #changes with each env class e.g., prod vs. staging vs. dev
+    ENV_SECRETS: "arn:aws:secretsmanager:us-east-1:348896246029:secret:marquee/admin/prod-Y88ivR" #changes for each deploy pipeline
+    DOCKER_COMPOSE_FILE: "docker-compose.prod.yml" #changes with each env class e.g., prod vs. staging vs. dev
+  secrets-manager:
+    DOCKER_HUB_USERNAME: $BUILD_SECRETS:DOCKER_HUB_USERNAME
+    DOCKER_HUB_PASSWORD: $BUILD_SECRETS:DOCKER_HUB_PASSWORD
+    NGINX_ECR_URL: $BUILD_SECRETS:NGINX_ECR_URL_PROD_ADMIN #Make sure that the Secret Key is pulling the correct ECR URL for this environment
+    PHP_ECR_URL: $BUILD_SECRETS:PHP_ECR_URL_PROD_ADMIN #Make sure that the Secret Key is pulling the correct ECR URL for this environment
+    S3_BUCKET_URL: $BUILD_SECRETS:S3_BUCKET_URL
+    CDN_DISTRIBUTION_ID: $BUILD_SECRETS:CDN_DISTRIBUTION_ID
+    COPY_ASSETS_TO_S3: $ENV_SECRETS:COPY_ASSETS_TO_S3
+phases:
+  install:
+    commands:
+      - docker login -u $DOCKER_HUB_USERNAME -p $DOCKER_HUB_PASSWORD
+      - aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin $NGINX_ECR_URL
+      - aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin $PHP_ECR_URL
+  pre_build:
+    commands:
+      - docker pull $NGINX_ECR_URL:latest; echo "Pull complete"
+      - docker pull $PHP_ECR_URL:latest; echo "Pull complete"
+  build:
+    commands:
+      - echo Build started on `date`
+      - aws secretsmanager get-secret-value --secret-id=$DB_SECRETS --query SecretString --output text | jq -r "to_entries|map(\"\(.key)=\(.value|tostring)\")|.[]" > .env
+      - aws secretsmanager get-secret-value --secret-id=$ENV_SECRETS --query SecretString --output text | jq -r "to_entries|map(\"\(.key)=\(.value|tostring)\")|.[]" >> .env
+      # Both ECR Urls must be sent to the .env in order for docker-compose to work on the deploy instance
+      - echo "NGINX_ECR_URL=$NGINX_ECR_URL" >> .env
+      - echo "PHP_ECR_URL=$PHP_ECR_URL" >> .env
+      - BUILD_NO=$CODEBUILD_BUILD_NUMBER docker-compose -f $DOCKER_COMPOSE_FILE build --build-arg NGINX_ECR_URL --build-arg PHP_ECR_URL
+      - BUILD_NO=$CODEBUILD_BUILD_NUMBER docker-compose -f $DOCKER_COMPOSE_FILE push
+      - docker image tag $NGINX_ECR_URL:$CODEBUILD_BUILD_NUMBER $NGINX_ECR_URL:latest
+      - docker image push $NGINX_ECR_URL:latest
+      - docker image tag $PHP_ECR_URL:$CODEBUILD_BUILD_NUMBER $PHP_ECR_URL:latest
+      - docker image push $PHP_ECR_URL:latest
+      - "npx js-yaml $DOCKER_COMPOSE_FILE | jq 'del(.services[].build)' | npx js-yaml - > $DOCKER_COMPOSE_FILE.tmp && mv $DOCKER_COMPOSE_FILE.tmp docker-compose.yml"
+      - |
+        if [ "$COPY_ASSETS_TO_S3" = "1" ]; then
+          aws s3 sync ./html/web/assets $S3_BUCKET_URL/
+          aws cloudfront create-invalidation --distribution-id $CDN_DISTRIBUTION_ID --paths "/*"
+        fi
+artifacts:
+  files:
+    - docker-compose.yml
+    - .env

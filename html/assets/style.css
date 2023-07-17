@@ -1,0 +1,11 @@
+body {
+    background-color: lightblue;
+    color: black;
+}
+
+#main-div {
+    height: 100vh;
+    width: 100vh;
+    margin: 48vh auto 0 auto;
+    text-align: center;
+}

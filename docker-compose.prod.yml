@@ -1,0 +1,45 @@
+version: '3.8'
+services:
+  nginx:
+    build:
+      context: ./
+      dockerfile: ./docker/nginx/Dockerfile
+      cache_from:
+        - ${NGINX_ECR_URL}:latest
+    image: ${NGINX_ECR_URL}:${BUILD_NO:-latest}
+    env_file:
+      - .env
+    ports:
+      - '80:80'
+    depends_on:
+      - php
+    links:
+      - php
+    logging:
+      driver: awslogs
+      options:
+        mode: non-blocking
+        awslogs-region: 'us-east-1'
+        awslogs-group: 'ma2023/demo'
+        awslogs-create-group: 'true'
+  php:
+    build:
+      context: ./
+      dockerfile: ./docker/php/Dockerfile
+      target: php
+      cache_from:
+        - ${PHP_ECR_URL}:latest
+    image: ${PHP_ECR_URL}:${BUILD_NO:-latest}
+    env_file:
+      - .env
+    expose:
+      - '9000'
+    logging:
+      driver: awslogs
+      options:
+        mode: non-blocking
+        awslogs-region: 'us-east-1'
+        awslogs-group: 'ma2023/demo'
+        awslogs-create-group: 'true'
+volumes:
+  cpresources:
