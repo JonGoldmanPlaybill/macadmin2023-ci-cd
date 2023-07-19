@@ -8,8 +8,8 @@ env:
   secrets-manager:
     DOCKER_HUB_USERNAME: $DOCKER_SECRETS:DOCKER_HUB_USERNAME
     DOCKER_HUB_PASSWORD: $DOCKER_SECRETS:DOCKER_HUB_PASSWORD
-    NGINX_ECR_URL: $BUILD_SECRETS:NGINX_ECR_URL_PROD_ADMIN #Make sure that the Secret Key is pulling the correct ECR URL for this environment
-    PHP_ECR_URL: $BUILD_SECRETS:PHP_ECR_URL_PROD_ADMIN #Make sure that the Secret Key is pulling the correct ECR URL for this environment
+    NGINX_ECR_URL: $BUILD_SECRETS:NGINX_ECR_URL_DEMO_BASIC #Make sure that the Secret Key is pulling the correct ECR URL for this environment
+    PHP_ECR_URL: $BUILD_SECRETS:PHP_ECR_URL_DEMO_BASIC #Make sure that the Secret Key is pulling the correct ECR URL for this environment
     S3_BUCKET_URL: $BUILD_SECRETS:S3_BUCKET_URL
     CDN_DISTRIBUTION_ID: $BUILD_SECRETS:CDN_DISTRIBUTION_ID
     COPY_ASSETS_TO_S3: $ENV_SECRETS:COPY_ASSETS_TO_S3

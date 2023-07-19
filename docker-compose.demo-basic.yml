@@ -41,5 +41,4 @@ services:
         awslogs-region: 'us-east-1'
         awslogs-group: 'ma2023/demo'
         awslogs-create-group: 'true'
-volumes:
-  cpresources:
+
