@@ -1,13 +1,13 @@
 version: 0.2
 env:
   variables: # Make sure that the static variables are for this specific environment
-    BUILD_SECRETS: "arn:aws:secretsmanager:us-east-1:348896246029:secret:marquee/build-016Yde" #should be the same for all envs
-    DB_SECRETS: "arn:aws:secretsmanager:us-east-1:348896246029:secret:marquee/db/prod-sskjSv" #changes with each env class e.g., prod vs. staging vs. dev
-    ENV_SECRETS: "arn:aws:secretsmanager:us-east-1:348896246029:secret:marquee/admin/prod-Y88ivR" #changes for each deploy pipeline
-    DOCKER_COMPOSE_FILE: "docker-compose.prod.yml" #changes with each env class e.g., prod vs. staging vs. dev
+    DOCKER_SECRETS: "arn:aws:secretsmanager:us-east-1:082949355595:secret:general/dockerhub-iVBwTL" #should be static for all docker builds
+    BUILD_SECRETS: "arn:aws:secretsmanager:us-east-1:082949355595:secret:basic/demo/build-Wcvx0X" #should be the same for all envs
+    ENV_SECRETS: "arn:aws:secretsmanager:us-east-1:082949355595:secret:basic/demo/env-sf3X7l" #changes for each deploy pipeline
+    DOCKER_COMPOSE_FILE: "docker-compose.demo-basic.yml" #changes with each env class e.g., prod vs. staging vs. dev
   secrets-manager:
-    DOCKER_HUB_USERNAME: $BUILD_SECRETS:DOCKER_HUB_USERNAME
-    DOCKER_HUB_PASSWORD: $BUILD_SECRETS:DOCKER_HUB_PASSWORD
+    DOCKER_HUB_USERNAME: $DOCKER_SECRETS:DOCKER_HUB_USERNAME
+    DOCKER_HUB_PASSWORD: $DOCKER_SECRETS:DOCKER_HUB_PASSWORD
     NGINX_ECR_URL: $BUILD_SECRETS:NGINX_ECR_URL_PROD_ADMIN #Make sure that the Secret Key is pulling the correct ECR URL for this environment
     PHP_ECR_URL: $BUILD_SECRETS:PHP_ECR_URL_PROD_ADMIN #Make sure that the Secret Key is pulling the correct ECR URL for this environment
     S3_BUCKET_URL: $BUILD_SECRETS:S3_BUCKET_URL
@@ -26,8 +26,7 @@ phases:
   build:
     commands:
       - echo Build started on `date`
-      - aws secretsmanager get-secret-value --secret-id=$DB_SECRETS --query SecretString --output text | jq -r "to_entries|map(\"\(.key)=\(.value|tostring)\")|.[]" > .env
-      - aws secretsmanager get-secret-value --secret-id=$ENV_SECRETS --query SecretString --output text | jq -r "to_entries|map(\"\(.key)=\(.value|tostring)\")|.[]" >> .env
+      - aws secretsmanager get-secret-value --secret-id=$ENV_SECRETS --query SecretString --output text | jq -r "to_entries|map(\"\(.key)=\(.value|tostring)\")|.[]" > .env
       # Both ECR Urls must be sent to the .env in order for docker-compose to work on the deploy instance
       - echo "NGINX_ECR_URL=$NGINX_ECR_URL" >> .env
       - echo "PHP_ECR_URL=$PHP_ECR_URL" >> .env
