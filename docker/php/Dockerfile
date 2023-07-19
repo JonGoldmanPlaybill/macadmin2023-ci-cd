@@ -32,8 +32,8 @@ COPY ./docker/php/www.conf /usr/local/etc/php-fpm.d
 COPY --chown=www-data:www-data ./html /var/www/html
 
 # Composer install
-RUN composer install -d /var/www/html/ && \
-    chown -R www-data:www-data /var/www/html/vendor && \
-    chown -R www-data:www-data /var/www/html/composer.lock
+#RUN composer install -d /var/www/html/ && \
+#    chown -R www-data:www-data /var/www/html/vendor && \
+#    chown -R www-data:www-data /var/www/html/composer.lock
 
 
